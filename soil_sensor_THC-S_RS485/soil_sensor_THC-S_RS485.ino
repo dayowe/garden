@@ -116,7 +116,7 @@ void loop() {
   if (result == sensor.ku8MBSuccess) {
     humidity = sensor.getResponseBuffer(0) / 10.0; // sensor returns dat aas 0.1%RH, so divide by 10
     temperature = sensor.getResponseBuffer(1) / 10.0; // sensor returns data as 0.1°C, so divide by 10
-    conductivity = sensor.getResponseBuffer(2); // sensor returns data in us/cm directly
+    conductivity = sensor.getResponseBuffer(2) / 1000.0; // Ensure division by a floating-point number for accurate calculation
 
     Serial.print("Humidity: ");
     Serial.print(humidity);
@@ -149,13 +149,17 @@ void loop() {
     display.print(temperature);
     display.println(" C");
 
+    display.println(F(""));
+
     display.print(F("Moisture: "));
     display.print(humidity);
     display.println(" %");
 
+    display.println(F(""));
+    
     display.print(F("EC:       "));
     display.print(conductivity);
-    display.println(" uS/cm");
+    display.println(" mS/cm");
     
     // Refresh the OLED display with new data
     display.display();
@@ -175,7 +179,7 @@ void loop() {
     client.publish(moistureTopic, messageBuffer);
 
     // Publish conductivity
-    dtostrf(conductivity, 1, 2, messageBuffer);
+    dtostrf(conductivity, 6, 3, messageBuffer); // Adjusted precision to 3 decimal places for mS/cm.
     client.publish(conductivityTopic, messageBuffer);
   }
 
