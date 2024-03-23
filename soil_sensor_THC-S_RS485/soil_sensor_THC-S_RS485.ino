@@ -28,7 +28,7 @@ int displaySensorID = 1;   // Sensor ID to display (and poll)
 bool activeSensors[maxSensors] = {false}; // Array to keep track of active sensors
 
 unsigned long previousMillis = 0; // Last update time stamp
-const long interval = 2000; // Interval at which to read sensors (in milliseconds)
+const long interval = 4000; // Interval at which to read sensors (in milliseconds)
 
 // Optional DE/RE pins for RS485 transceivers that require direction control
 // Uncomment the following line if your RS485 transceiver requires DE/RE pin control
@@ -196,6 +196,7 @@ void readAndPublishSensorData(int sensorID) {
   if (result == sensor.ku8MBSuccess) {
     // If read succeeds, process and display the data
     float humidity = sensor.getResponseBuffer(0) / 10.0; // Convert to actual value
+    float vwc = -0.0020844495456097786 * humidity * humidity + 0.8758395803818368 * humidity -0.007765958483453483;
     float temperature = sensor.getResponseBuffer(1) / 10.0; // Convert to actual value
     float conductivity = sensor.getResponseBuffer(2); // 1000.0; // Convert to actual value
     
@@ -204,30 +205,36 @@ void readAndPublishSensorData(int sensorID) {
     float poreWaterEC = calculatePoreWaterEC(conductivity, epsilon_b, temperature, 4.1); // 4.1 is esb_0 for coco coir
 
     // Log and display sensor data for debugging and info
-    Serial.print("Humidity: ");
-    Serial.print(humidity);
-    Serial.println("% RH");
+    //Serial.print("Humidity: ");
+    //Serial.print(humidity);
+    //Serial.println("% RH");
     Serial.print("Temperature: ");
     Serial.print(temperature);
     Serial.println("°C");
     Serial.print("Conductivity: ");
     Serial.print(conductivity);
     Serial.println(" uS/cm");
-    Serial.print(" pwEC: ");
+    Serial.print("pwEC: ");
     Serial.print(poreWaterEC);
     Serial.println(" uS/cm");
 
-    display.print("Hum: ");
-    display.print(humidity);
-    display.println("% RH");
+    Serial.print("Temperature: "); Serial.print(tempC); Serial.println("*C");
+    Serial.print("Capacitive: "); Serial.println(capread);
+
+    //display.print("Hum: ");
+    //display.print(humidity);
+    //display.println("%");
+    display.print("VWC: ");
+    display.print(vwc);
+    display.println("%");
     display.println(F(""));
     display.print("Temp: ");
     display.print(temperature);
     display.println(" C");
     display.println(F(""));
-    display.print("Cond: ");
-    display.print(conductivity);
-    display.println(" uS/cm");
+    //display.print("Cond: ");
+    //display.print(conductivity);
+    //display.println(" uS/cm");
     display.print("pwEC: ");
     display.print(poreWaterEC);
     display.println(" uS/cm");
