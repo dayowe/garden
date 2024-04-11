@@ -60,7 +60,7 @@ This step involves systematically removing moisture from the coco coir. Let the 
    
    The calculation is straightforward:
   
-     ![alt text](./svg/vwc_equation.svg)
+     ![svg/vwc_equation](https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/vwc_equation.svg)
 
      <!--
      \text{VWC ()} = \frac{\text{Volume of water added (L, ml, or any consistent unit)}}{\text{Volume of coco coir (same units)}} \times 100
@@ -192,7 +192,7 @@ Having applied quadratic regression analysis in the previous step, you now have 
 
 The general form of the quadratic equation you have derived is:
 
-![alt text](svg/true_vwc_equation.svg)
+![svg/true_vwc_equation.svg](https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation.svg)
 
 <!--
 True VWC (%) = \( a \times (\text{Sensor Reading})^2 + b \times \text{Sensor Reading} + c \)
@@ -220,7 +220,7 @@ Suppose the quadratic regression provided the coefficients as follows: **a** = 0
 
 Your specific calibration formula would then be:
 
-![alt text](svg/true_vwc_equation_example.svg)
+![svg/true_vwc_equation_example.svg](https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation_example.svg)
 
 <!-- 
 True VWC (%) = 0.005 \times (\text{Sensor Reading})^2 - 0.01 \times \text{Sensor Reading} + 25
