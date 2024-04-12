@@ -214,7 +214,7 @@ The general form of the quadratic equation you have derived is:
 
 Suppose the quadratic regression provided the coefficients as follows:
 
-<p class="equation"><center>**a** = 0.005, **b** = -0.01, and **c** = 25.</center></p>
+<p class="equation">**a** = 0.005, **b** = -0.01, and **c** = 25.</p>
 
 Your specific calibration formula would then be:
 
