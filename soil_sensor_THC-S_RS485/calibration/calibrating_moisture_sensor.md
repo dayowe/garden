@@ -60,7 +60,7 @@ This step involves systematically removing moisture from the coco coir. Let the 
    
    The calculation is straightforward:
   
-     ![svg/vwc_equation](https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/vwc_equation.svg)
+     <p class="equation"><center><img alt-text="svg/vwc_equation" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/vwc_equation.svg"></center></p>
 
      <!--
      \text{VWC ()} = \frac{\text{Volume of water added (L, ml, or any consistent unit)}}{\text{Volume of coco coir (same units)}} \times 100
@@ -192,7 +192,7 @@ Having applied quadratic regression analysis in the previous step, you now have 
 
 The general form of the quadratic equation you have derived is:
 
-![svg/true_vwc_equation.svg](https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation.svg)
+<p class="equation"><center><img alt-text="svg/true_vwc_equation.svg" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation.svg"><center></p>
 
 <!--
 True VWC (%) = \( a \times (\text{Sensor Reading})^2 + b \times \text{Sensor Reading} + c \)
@@ -216,11 +216,13 @@ True VWC (%) = \( a \times (\text{Sensor Reading})^2 + b \times \text{Sensor Rea
 
 #### Example
 
-Suppose the quadratic regression provided the coefficients as follows: **a** = 0.005, **b** = -0.01, and **c** = 25.
+Suppose the quadratic regression provided the coefficients as follows:
+
+<p class="equation"><center>**a** = 0.005, **b** = -0.01, and **c** = 25.</center></p>
 
 Your specific calibration formula would then be:
 
-![svg/true_vwc_equation_example.svg](https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation_example.svg)
+<p class="equation"><center><img alt-text="svg/true_vwc_equation_example.svg" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation_example.svg"></center></p>
 
 <!-- 
 True VWC (%) = 0.005 \times (\text{Sensor Reading})^2 - 0.01 \times \text{Sensor Reading} + 25
