@@ -60,13 +60,11 @@ This step involves systematically removing moisture from the coco coir. Let the 
    
    The calculation is straightforward:
   
-     <p class="equation"><center><img alt-text="svg/vwc_equation" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/vwc_equation.svg"></center></p>
-
-     <!--
-     \text{VWC ()} = \frac{\text{Volume of water added (L, ml, or any consistent unit)}}{\text{Volume of coco coir (same units)}} \times 100
-     -->
+<p class="equation">
+  <img alt="VWC Equation" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/vwc_equation.svg">
+</p>
   
-2. **Conversion from Weight to Volume**
+1. **Conversion from Weight to Volume**
 
    Often, water is added based on weight, assuming the well-established density of water of approximately 1 g/cm³ (or 1 kg/L). This means 1 gram of water corresponds to 1 cubic centimeter (cm³) of volume.
    
@@ -192,11 +190,9 @@ Having applied quadratic regression analysis in the previous step, you now have 
 
 The general form of the quadratic equation you have derived is:
 
-<p class="equation"><center><img alt-text="svg/true_vwc_equation.svg" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation.svg"><center></p>
-
-<!--
-True VWC (%) = \( a \times (\text{Sensor Reading})^2 + b \times \text{Sensor Reading} + c \)
--->
+<p class="equation">
+  <img alt="True VWC Equation" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation.svg">
+</p>
 
 **a** (quadratic coefficient): Influences the curvature of the model. The presence of this term allows the model to fit a wider range of nonlinear behaviors, which is crucial for accurately capturing the moisture characteristics of coco coir across different saturation levels.
 
@@ -222,11 +218,10 @@ Suppose the quadratic regression provided the coefficients as follows:
 
 Your specific calibration formula would then be:
 
-<p class="equation"><center><img alt-text="svg/true_vwc_equation_example.svg" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation_example.svg"></center></p>
+<p class="equation">
+  <img alt="True VWC Equation Example" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation_example.svg">
+</p>
 
-<!-- 
-True VWC (%) = 0.005 \times (\text{Sensor Reading})^2 - 0.01 \times \text{Sensor Reading} + 25
--->
 
 #### 5.5 Validation and Adjustment:
 
