@@ -154,7 +154,7 @@ A calibration curve serves as a graphical representation that maps sensor readin
 
   3. The software will output a quadratic equation in the form of:
      
-     **y = ax² + bx + c**
+     <p class="equation">y = ax² + bx + c</p>
      
      - Here, **y** is the calculated true VWC (%),
      - **x** is the sensor reading,
@@ -214,7 +214,7 @@ The general form of the quadratic equation you have derived is:
 
 Suppose the quadratic regression provided the coefficients as follows:
 
-<p class="equation">**a** = 0.005, **b** = -0.01, and **c** = 25.</p>
+<p class="equation">a = 0.005, b = -0.01, and c = 25.</p>
 
 Your specific calibration formula would then be:
 
