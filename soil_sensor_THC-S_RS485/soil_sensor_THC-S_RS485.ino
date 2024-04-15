@@ -23,7 +23,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 WiFiClient espClient; // Create an ESPClient object
 PubSubClient client(espClient); // Pass the ESPClient to PubSubClient for MQTT
 
-const int maxSensors = 8; // Maximum number of Modbus sensors
+const int maxSensors = 2; // Maximum number of Modbus sensors
 int displaySensorID = 1;   // Sensor ID to display (and poll)
 bool activeSensors[maxSensors] = {false}; // Array to keep track of active sensors
 
@@ -59,7 +59,7 @@ void setup() {
   client.setServer(mqttServer, mqttPort); // Set the MQTT broker details from "mqttCredentials.h"
 
   Serial.begin(115200);
-  RS485Serial.begin(4800, SERIAL_8N1, 16, 17); // Initialize RS485 communication
+  RS485Serial.begin(4800, SERIAL_8N1, 19, 22); // Initialize RS485 communication
 
   sensor.preTransmission(preTransmission);
   sensor.postTransmission(postTransmission);
@@ -165,6 +165,7 @@ void loop() {
 float calculateRealPermittivityOfSoilPoreWater(float Tsoil) {
     Serial.print("calculateRealPermittivityOfSoilPoreWater: ");
     Serial.print(80.3 - 0.37 * (Tsoil - 20));
+    Serial.println("");
     // Adapted from the Hilhorst model
     return 80.3 - 0.37 * (Tsoil - 20);
 }
@@ -174,6 +175,7 @@ float calculatePoreWaterEC(float sb, float epsilon_b, float Tsoil, float esb_0) 
     float ew = calculateRealPermittivityOfSoilPoreWater(Tsoil);
     Serial.print("calculatePoreWaterEC: ");
     Serial.print((ew * sb) / (epsilon_b - esb_0));
+    Serial.println("");
     // Apply the Hilhorst model formula
     return (ew * sb) / (epsilon_b - esb_0);
 }
@@ -191,68 +193,145 @@ void readAndPublishSensorData(int sensorID) {
   display.print("Sensor ID: ");
   display.println(sensorID);
 
-  display.println(F(""));
-
   if (result == sensor.ku8MBSuccess) {
     // If read succeeds, process and display the data
-    float humidity = sensor.getResponseBuffer(0) / 10.0; // Convert to actual value
-    float vwc = -0.0020844495456097786 * humidity * humidity + 0.8758395803818368 * humidity -0.007765958483453483;
-    float temperature = sensor.getResponseBuffer(1) / 10.0; // Convert to actual value
-    float conductivity = sensor.getResponseBuffer(2); // 1000.0; // Convert to actual value
-    
+    float soil_hum = sensor.getResponseBuffer(0) / 10.0; // Convert to actual value
+    float soil_temp = sensor.getResponseBuffer(1) / 10.0; // Convert to actual value
+    float soil_bulk_ec = sensor.getResponseBuffer(2) / 1000.0; // Convert to actual value
+
+    /**
+     * Soil VWC correction. Test and use if works for you.
+     */
+    // change: quadratic aproximation of VWC from CWT sensor to Teros 12 sensor.
+    // Just in case or for tests. The VWC of Teros and chinese sensor are very close (see reference spreadsheet).
+    //soil_hum = -0.0134 * soil_hum * soil_hum + 1.6659 * soil_hum - 6.1095;
+
+    float vwc = -0.0020844495456097786 * soil_hum * soil_hum + 0.8758395803818368 * soil_hum -0.007765958483453483;
+    float vwc_df = -0.0134 * soil_hum * soil_hum + 1.6659 * soil_hum - 6.1095;
+    /**
+     * Bulk EC correction. Choose one, test and uncomment if works for you.
+     */
+    // CHOOSE ONE: cubic aproximation of BULK EC from CWT sensor to Teros 12 sensor (more precise)
+    float soil_ec = 0.0000014403 * soil_bulk_ec * soil_bulk_ec * soil_bulk_ec - 0.0036 * soil_bulk_ec * soil_bulk_ec + 3.7525 * soil_bulk_ec - 814.1833;
+    float apparent_dielectric_permittivity = pow(0.000000002887 * soil_bulk_ec * soil_bulk_ec * soil_bulk_ec - 0.00002080 * soil_bulk_ec * soil_bulk_ec + 0.05276 * soil_bulk_ec - 43.39,2);    
+    float coco_vwc = 0.2420 + 0.006276 * apparent_dielectric_permittivity;
+
+    // CHOOSE ONE: This equation was obtained from calibration using distilled water and a 1.1178mS/cm solution.
+    // Change by @danielfppps >> https://github.com/kromadg/soil-sensor/issues/3#issuecomment-1383959976
+    //soil_ec = 1.93 * soil_ec - 270.8;
+
+    /**
+     * Bulk EC temperature correction. Test and use if works for you.
+     */
+    // Soil EC temp correction based on the Teros 12 manual. https://github.com/kromadg/soil-sensor/issues/1
+    soil_ec = soil_bulk_ec / (1.0 + 0.019 * (soil_temp - 25));
+    Serial.print("Soil EC temp correction: ");
+    Serial.print(soil_ec);
+    Serial.println("");
+
+    // temperature foi deixada a mesma pois os valores do teros e do sensor chines sao parecidos
+
+    // quadratic aproximation
+    // the teros bulk_permittivity was calculated from the teros temperature, teros bulk ec and teros pwec by Hilhorst 2000 model
+    float soil_apparent_dieletric_constant = 1.3088 + 0.1439 * soil_hum + 0.0076 * soil_hum * soil_hum;
+    float epsilon_b = 1.3088 + 0.1439 * soil_hum + 0.0076 * pow(soil_hum, 2);
+
+
+    Serial.print("soil_apparent_dieletric_constant: ");
+    Serial.println(soil_apparent_dieletric_constant);
+    //Serial.print("epsilon_b: ");
+    //Serial.println(epsilon_b);
+    float soil_bulk_permittivity = soil_apparent_dieletric_constant;  /// hammed 2015 (apparent_dieletric_constant is the real part of permittivity)
+    //Serial.print("soil_bulk_permittivity: ");
+    //Serial.println(soil_bulk_permittivity);
+    float soil_pore_permittivity = 80.3 - 0.37 * (soil_temp - 20); /// same as water 80.3 and corrected for temperature
+    Serial.print("soil_pore_permittivity: ");
+    Serial.println(soil_pore_permittivity);
+    // converting bulk EC to pore water EC
+    float soil_pw_ec;
+    if (soil_apparent_dieletric_constant > 4.1)
+        soil_pw_ec = ((soil_pore_permittivity * soil_ec) / (soil_apparent_dieletric_constant - 4.1)); /// from Hilhorst 2000.
+    else
+        soil_pw_ec = 0;
+    Serial.print(soil_pw_ec);
+    Serial.println("");
     // Additional calculation for Pore Water EC using Hilhorst model
-    float epsilon_b = 1.3088 + 0.1439 * humidity + 0.0076 * pow(humidity, 2);
-    float poreWaterEC = calculatePoreWaterEC(conductivity, epsilon_b, temperature, 4.1); // 4.1 is esb_0 for coco coir
-
+    float poreWaterEC;
+    if (soil_apparent_dieletric_constant > 4.1)
+      poreWaterEC = calculatePoreWaterEC(soil_ec, epsilon_b, soil_temp, 4.1); // 4.1 is esb_0 for coco coir
+    else
+        soil_pw_ec = 0;
     // Log and display sensor data for debugging and info
-    //Serial.print("Humidity: ");
-    //Serial.print(humidity);
-    //Serial.println("% RH");
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
+    Serial.print("Raw Humidity: ");
+    Serial.print(soil_hum);
+    Serial.println("% RH");
+    Serial.print("VWC: ");
+    Serial.print(vwc);
+    Serial.println("%");
+    Serial.print("Soil Temp: ");
+    Serial.print(soil_temp);
     Serial.println("°C");
-    Serial.print("Conductivity: ");
-    Serial.print(conductivity);
-    Serial.println(" uS/cm");
     Serial.print("pwEC: ");
+    Serial.print(soil_pw_ec);
+    Serial.println(" mS/cm");
+    Serial.print("my pwEC: ");
     Serial.print(poreWaterEC);
-    Serial.println(" uS/cm");
+    Serial.println(" mS/cm");
+    Serial.print("Bulk soil EC: ");
+    Serial.print(soil_bulk_ec);
+    Serial.println(" mS/cm");
+    Serial.print("Bulk EC: ");
+    Serial.print(soil_ec);
+    Serial.println(" mS/cm");
+    Serial.print("coco vwc: ");
+    Serial.print(coco_vwc);
+    Serial.println(" %");
+    Serial.print("apparent dielectric permittivity: ");
+    Serial.print(apparent_dielectric_permittivity);
+    Serial.println("");
 
-    Serial.print("Temperature: "); Serial.print(tempC); Serial.println("*C");
-    Serial.print("Capacitive: "); Serial.println(capread);
-
-    //display.print("Hum: ");
-    //display.print(humidity);
-    //display.println("%");
-    display.print("VWC: ");
+    display.println("");
+    display.print("VWC (RAW): ");
+    display.print(soil_hum);
+    display.println("%");
+    //display.println("");
+    display.print("VWC calc: ");
     display.print(vwc);
     display.println("%");
-    display.println(F(""));
+    display.println("");
     display.print("Temp: ");
-    display.print(temperature);
+    display.print(soil_temp);
     display.println(" C");
-    display.println(F(""));
-    //display.print("Cond: ");
-    //display.print(conductivity);
-    //display.println(" uS/cm");
-    display.print("pwEC: ");
-    display.print(poreWaterEC);
+    //display.print("pwPermit: ");
+    //display.print(soil_pore_permittivity);
+    //display.println("");
+    //display.print("dConst/eb: ");
+    //display.print(soil_apparent_dieletric_constant);
+    //display.println("");
+    display.print("Bulk EC: ");
+    display.print(soil_bulk_ec);
     display.println(" uS/cm");
+    display.print("pwEC: ");
+    display.print(soil_pw_ec);
+    display.println(" mS/cm");
+    //display.print("VWC DF: ");
+    //display.print(vwc_df);
+    //display.println(" %");
 
     // Prepare MQTT topics and messages
     char topic[100];
     char messageBuffer[20];
 
     snprintf(topic, sizeof(topic), "%sthcs%d/temperature", baseTopic, sensorID);
-    dtostrf(temperature, 1, 2, messageBuffer);
+    dtostrf(soil_temp, 1, 2, messageBuffer);
     client.publish(topic, messageBuffer);
     
     snprintf(topic, sizeof(topic), "%sthcs%d/moisture", baseTopic, sensorID);
-    dtostrf(humidity, 1, 2, messageBuffer);
+    dtostrf(soil_hum, 1, 2, messageBuffer);
     client.publish(topic, messageBuffer);
 
     snprintf(topic, sizeof(topic), "%sthcs%d/conductivity", baseTopic, sensorID);
-    dtostrf(conductivity, 6, 3, messageBuffer);
+    dtostrf(soil_ec, 6, 3, messageBuffer);
     client.publish(topic, messageBuffer);
 
     // Publish Pore Water EC as well
