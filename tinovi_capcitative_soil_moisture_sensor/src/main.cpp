@@ -1,10 +1,25 @@
 #include "M5AtomS3.h"
+#include "MQTTManager.h"
+#include "WiFiManager.h"
 #include "vcs3i2c.h" // Library for the I2C soil sensor
+
+// Create a WiFiClient instance for the PubSubClient to use
+WiFiClient espClient;
+
+// Initialize the MQTT client with the WiFi client
+PubSubClient mqttClient(espClient);
 
 String message = ""; // Holds the message to be displayed
 
 // Initialize the soil sensor object
 SVCS3 vcs;
+
+// Function prototypes
+void displaySensorValues();
+void publishSensorDataToMQTT();
+void displayCalibrationPrompt();
+void displayError();
+void displayMessage(String msg);
 
 enum CalibrationState {
     REGULAR,
@@ -17,29 +32,58 @@ CalibrationState state = REGULAR;
 unsigned long buttonPressTime = 0; // Track how long the button is pressed
 bool inCalibrationMode = false; // Flag to check if currently in calibration mode
 
+void setDefaultDisplayProperties() {
+    // Set text size and color for the display
+    AtomS3.Display.fillScreen(BLACK);
+    // Set cursor to top left corner
+    AtomS3.Display.setCursor(0, 0);
+    AtomS3.Display.setTextSize(1);
+    AtomS3.Display.setTextColor(WHITE); // Set text color
+    AtomS3.Display.setTextWrap(true);
+}
+
 void setup() {
     auto cfg = M5.config();
     AtomS3.begin(cfg);
+    Serial.begin(115200);
     Wire.begin(38, 39); // Initialize custom I2C pins
 
     pinMode(41, INPUT_PULLUP); // Initialize the button on GPIO 41
 
-    int textSize = AtomS3.Display.height() / 60; // Adjust for readability
-    AtomS3.Display.setTextSize(textSize);
-    AtomS3.Display.fillScreen(BLACK); // Clear the screen
-    AtomS3.Display.setCursor(0, 0); // Set cursor to top-left
-    AtomS3.Display.setTextColor(WHITE); // Set text color
-    AtomS3.Display.setTextWrap(true);
+    // Initialize WiFi
+    setupWiFi(); // Make sure to call this before checking WiFi status
+
+    // Clear the display
+    setDefaultDisplayProperties();
+    // Check WiFi connection status
+    if (WiFi.status() == WL_CONNECTED) {
+        AtomS3.Display.println("WiFi connected");
+        AtomS3.Display.printf("IP: %s", WiFi.localIP().toString().c_str());
+    } else {
+        AtomS3.Display.println("WiFi NOT connected");
+        // At this point, you may want to handle the failed connection
+    }
+    delay(2000); // Give some time for the user to see the message
+
+    // Initialize MQTT
+    setupMQTT(mqttClient);
+
 
     // Attempt to initialize the sensor with the specified I2C address and Wire instance
-    if (vcs.init(0x63, &Wire) != 0) { // Assuming '!= 0' indicates failure based on your context
+    if (vcs.init(0x63, &Wire) != 0) {
         message = "Sensor init failed!";
     } else {
         message = "Sensor initialized.";
     }
 }
 
+
 void loop() {
+    handleWiFi();
+    AtomS3.update();
+    Serial.printf("test\n");
+    delay(1000);
+    handleMQTT(mqttClient);
     if (digitalRead(41) == LOW) { // Button is pressed
         if (buttonPressTime == 0) { // Start timer if not already started
             buttonPressTime = millis();
@@ -115,11 +159,23 @@ void displaySensorValues() {
     float ec = vcs.getEC();
     float temp = vcs.getTemp();
     float vwc = vcs.getVWC();
+
+    // Create specific topics for each sensor value
+    char e25Topic[100], ecTopic[100], tempTopic[100], vwcTopic[100];
+    snprintf(e25Topic, sizeof(e25Topic), "%sE25", BASE_TOPIC);
+    snprintf(ecTopic, sizeof(ecTopic), "%sEC", BASE_TOPIC);
+    snprintf(tempTopic, sizeof(tempTopic), "%sTemp", BASE_TOPIC);
+    snprintf(vwcTopic, sizeof(vwcTopic), "%sVWC", BASE_TOPIC);
+
+    // Publish each sensor value to its specific topic
+    publishSensorData(mqttClient, e25Topic, e25);
+    publishSensorData(mqttClient, ecTopic, ec);
+    publishSensorData(mqttClient, tempTopic, temp);
+    publishSensorData(mqttClient, vwcTopic, vwc);
     
     // Clear the display
-    AtomS3.Display.fillScreen(BLACK);
-    // Set cursor to top left corner
-    AtomS3.Display.setCursor(0, 0);
+    setDefaultDisplayProperties();
+
     // Display the values
     AtomS3.Display.printf("E25: %.2f\n", e25);
     AtomS3.Display.printf("EC: %.2f mS/m\n", ec);
@@ -129,8 +185,7 @@ void displaySensorValues() {
 
 void displayCalibrationPrompt() {
     // Clear the display
-    AtomS3.Display.fillScreen(BLACK);
-    AtomS3.Display.setCursor(0, 0);
+    setDefaultDisplayProperties();
     
     // Adjust message based on the state
     switch (state) {
@@ -149,12 +204,14 @@ void displayCalibrationPrompt() {
 }
 
 void displayError() {
+    setDefaultDisplayProperties();
     AtomS3.Display.fillScreen(BLACK);
     AtomS3.Display.setCursor(0, 0);
     AtomS3.Display.println(message);
 }
 
 void displayMessage(String msg) {
+    setDefaultDisplayProperties();
     AtomS3.Display.fillScreen(BLACK);
     AtomS3.Display.setCursor(0, 0);
     AtomS3.Display.println(msg);
