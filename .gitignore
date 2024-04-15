@@ -1,0 +1,5 @@
+.DS_Store
+**/venv
+**/Config.h
+**/WiFiCredentials.h
+**/MQTTCredentials.h
