@@ -1,0 +1,1 @@
+This is a poor and messy merge of the code for the THC-S and tinovi sensor so they run on one AtomS3 and display the readings of each sensor on the internal display of the AtomS3.
