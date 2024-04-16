@@ -104,7 +104,7 @@ void setup() {
 
   // Initialize MQTT and display status
   setupMQTT(mqttClient);
-  //reconnectMQTT(mqttClient); // Ensure you're connected to MQTT and update display accordingly
+  reconnectMQTT(mqttClient); // Ensure you're connected to MQTT and update display accordingly
 
   RS485Serial.begin(4800, SERIAL_8N1, 1, 2); // Initialize RS485 communication
 
