@@ -20,7 +20,7 @@ load_dotenv()
 
 # Retrieve the values from the .env file
 DP_vals_string = os.getenv('DP_VALS')
-VWC_vals_string = os.getenv('HUMIDITY_VALS')
+VWC_vals_string = os.getenv('VWC_VALS')
 
 # Convert the string values to numpy arrays
 DP_vals = np.array([float(x) for x in DP_vals_string.split(',')])
