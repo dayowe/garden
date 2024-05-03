@@ -1,4 +1,24 @@
-# pip install statsmodels scikit-learn python-dotenv numpy
+"""
+piecewise_regression.py
+
+This script conducts a piecewise linear regression analysis on a set of data points. It determines the optimal breakpoint
+that minimizes the Bayesian Information Criterion (BIC) for the two resulting linear segments of the dataset. The dataset
+is sourced from environment variables 'HUMIDITY_VALS' and 'VWC_VALS', which should contain comma-separated numerical values
+for humidity and Volumetric Water Content (VWC) respectively.
+
+The script outputs the optimal breakpoint and the coefficients of the two linear models. It also saves these results to a
+text file named 'coefficients.txt'.
+
+Pre-requisites:
+- Set 'HUMIDITY_VALS' and 'VWC_VALS' in your environment variables with valid numerical values.
+- Install required Python packages: statsmodels, scikit-learn, python-dotenv, numpy
+
+Usage:
+1. Ensure that the necessary environment variables are set.
+2. Run this script in a Python environment with the required packages.
+3. Review the outputted optimal breakpoint and coefficients, or check the 'coefficients.txt' file.
+"""
+
 import os
 import numpy as np
 import statsmodels.api as sm
