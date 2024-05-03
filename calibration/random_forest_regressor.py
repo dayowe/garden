@@ -1,3 +1,21 @@
+"""
+random_forest_regressor.py
+
+This script utilizes a Random Forest Regressor to predict an output based on input features. In its current form,
+it is set up to predict Volumetric Water Content (VWC) from humidity sensor readings. The script takes in data
+from environment variables, fits a Random Forest model to this data, and allows the user to make predictions using
+new sensor readings.
+
+Before running the script, make sure to set 'HUMIDITY_VALS' and 'VWC_VALS' in your environment variables with the
+appropriate data formatted as comma-separated values. All required Python packages should also be installed in your
+environment.
+
+Usage:
+1. Set 'HUMIDITY_VALS' and 'VWC_VALS' in your environment variables.
+2. Run the script in a Python environment with the necessary dependencies.
+3. Input a humidity reading when prompted to obtain the VWC prediction.
+"""
+
 import os
 import numpy as np
 from dotenv import load_dotenv
@@ -34,4 +52,3 @@ if __name__ == "__main__":
     sensor_input = float(input("Enter the sensor humidity reading: "))
     predicted_vwc = predict_vwc(sensor_input)
     print(f"The predicted VWC for a humidity reading of {sensor_input} is {predicted_vwc}")
-
