@@ -93,8 +93,11 @@ x_plot = np.linspace(min(independent_vals), max(independent_vals), 200)
 plt.figure(figsize=(10, 5))
 plt.scatter(independent_vals, dependent_vals, label='Observed Data')
 plt.plot(x_plot, fitted_polynomial(x_plot), 'r-', label=f'Fitted Polynomial (degree={args.degree})')
-plt.xlabel('Independent Variable')
-plt.ylabel('Dependent Variable')
+
+# Set the labels using the command-line arguments for independent and dependent variable names
+plt.xlabel(args.independent_var.replace('_', ' ').title())
+plt.ylabel(args.dependent_var.replace('_', ' ').title())
+
 plt.title('Polynomial Fit to Data')
 plt.legend()
 plt.grid(True)
