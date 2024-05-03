@@ -61,7 +61,7 @@ This step involves systematically removing moisture from the coco coir. Let the 
    The calculation is straightforward:
   
 <p class="equation">
-  <img alt="VWC Equation" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/vwc_equation.svg">
+  <img alt="VWC Equation" src="https://raw.githubusercontent.com/dayowe/garden/master/calibration/svg/vwc_equation.svg">
 </p>
   
 1. **Conversion from Weight to Volume**
@@ -191,7 +191,7 @@ Having applied quadratic regression analysis in the previous step, you now have 
 The general form of the quadratic equation you have derived is:
 
 <p class="equation">
-  <img alt="True VWC Equation" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation.svg">
+  <img alt="True VWC Equation" src="https://raw.githubusercontent.com/dayowe/garden/master/calibration/svg/true_vwc_equation.svg">
 </p>
 
 **a** (quadratic coefficient): Influences the curvature of the model. The presence of this term allows the model to fit a wider range of nonlinear behaviors, which is crucial for accurately capturing the moisture characteristics of coco coir across different saturation levels.
@@ -219,7 +219,7 @@ Suppose the quadratic regression provided the coefficients as follows:
 Your specific calibration formula would then be:
 
 <p class="equation">
-  <img alt="True VWC Equation Example" src="https://raw.githubusercontent.com/dayowe/garden/master/soil_sensor_THC-S_RS485/calibration/svg/true_vwc_equation_example.svg">
+  <img alt="True VWC Equation Example" src="https://raw.githubusercontent.com/dayowe/garden/master/calibration/svg/true_vwc_equation_example.svg">
 </p>
 
 
