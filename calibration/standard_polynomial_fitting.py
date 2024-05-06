@@ -78,13 +78,40 @@ for i in range(degree, -1, -1):
 predictor_vals_for_curve = np.linspace(min(predictor_vals), max(predictor_vals), 200)
 fitted_values_for_curve = polynomial_model(predictor_vals_for_curve)
 
-# Plot the original data and the fitted curve
-plt.figure(figsize=(10, 5))
-plt.scatter(predictor_vals, response_vals, color='blue', label='Data Points')
-plt.plot(predictor_vals_for_curve, fitted_values_for_curve, 'r-', label=f'Fitted Polynomial Model (degree={degree})')
-plt.xlabel(args.predictor_var)
-plt.ylabel(args.response_var)
-plt.title('Polynomial Model Fit to Data')
+# Predict the VWC values using the polynomial model
+predicted_VWC = polynomial_model(predictor_vals)
+
+# Calculate residuals
+residuals = response_vals - predicted_VWC
+
+# Plot the original data and the fitted curve, and residuals
+plt.figure(figsize=(15, 7))
+
+# Original Data and Polynomial Fit Plot
+plt.subplot(1, 3, 1)
+plt.scatter(predictor_vals, response_vals, color='blue', label='Actual VWC')
+plt.plot(predictor_vals_for_curve, fitted_values_for_curve, 'r-', label=f'Polynomial Fit (degree={degree})')
+plt.xlabel('Sensor Readings')
+plt.ylabel('Volumetric Water Content (VWC)')
+plt.title('Sensor Readings vs. VWC')
 plt.legend()
-plt.grid(True)
+
+# Predicted VWC vs. Actual VWC
+plt.subplot(1, 3, 2)
+plt.scatter(response_vals, predicted_VWC, color='green', label='Predicted VWC')
+plt.plot([response_vals.min(), response_vals.max()], [response_vals.min(), response_vals.max()], 'k--', lw=2, label='Perfect Prediction')
+plt.xlabel('Actual VWC')
+plt.ylabel('Predicted VWC')
+plt.title('Actual vs. Predicted VWC')
+plt.legend()
+
+# Residuals vs Predicted VWC
+plt.subplot(1, 3, 3)
+plt.scatter(predicted_VWC, residuals, color='purple')
+plt.axhline(y=0, color='r', linestyle='--')
+plt.xlabel('Predicted VWC')
+plt.ylabel('Residuals')
+plt.title('Residuals vs. Predicted VWC')
+
+plt.tight_layout()
 plt.show()
