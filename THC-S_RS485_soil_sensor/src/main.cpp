@@ -5,6 +5,7 @@
 #include <WiFi.h>    //Include WiFi library for ESP32
 #include "MQTTManager.h"
 #include "WiFiManager.h"
+#include "Config.h"
 
 // Instantiate the ModbusMaster object for Modbus RTU over RS485
 ModbusMaster sensor;
@@ -14,11 +15,14 @@ ModbusMaster sensor;
 WiFiClient espClient; // Create an ESPClient object
 PubSubClient mqttClient(espClient);
 
-const int maxSensors = 2; // Maximum number of Modbus sensors
+const int maxSensors = 4; // Maximum number of Modbus sensors
 int displaySensorID = 1;   // Sensor ID to display (and poll)
 bool activeSensors[maxSensors] = {false}; // Array to keep track of active sensors
 
-unsigned long previousMillis = 0; // Last update time stamp
+// Global variables for timing
+unsigned long previousMillis = 0;
+unsigned long lastSensorSwitchTime = 0;
+
 
 // Optional DE/RE pins for RS485 transceivers that require direction control
 // Uncomment the following line if your RS485 transceiver requires DE/RE pin control
@@ -57,10 +61,10 @@ void detectSensors() {
   }
 
 // Clear the display and show the detection results
-  setDefaultDisplayProperties();
-  AtomS3.Display.print("Detection complete. Detected ");
+  AtomS3.Display.print("\nDetection complete. Detected ");
   AtomS3.Display.print(detectedSensors);
   AtomS3.Display.println(" sensor(s).");
+  delay(2000);
 }
 
 void reconnect() {
@@ -96,11 +100,6 @@ void setup() {
       // At this point, you may want to handle the failed connection
   }
   delay(1000); // Give some time for the user to see the message
-
-  // Display a simple message
-    AtomS3.Display.fillScreen(BLACK); // Clear the screen
-    AtomS3.Display.setCursor(0, 0);   // Reset cursor position
-    AtomS3.Display.println("Hello World");
 
   // Initialize MQTT and display status
   setupMQTT(mqttClient);
@@ -277,19 +276,25 @@ void loop() {
   handleMQTT(mqttClient);
 
   unsigned long currentMillis = millis();
+
+  // Handle 1-minute interval
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    
+
     // Read and publish only if the sensor is active
     if (activeSensors[displaySensorID - 1]) {
       readAndPublishSensorData(displaySensorID);
-
-      // Move to the next sensor, skip inactive ones
-      do {
-        displaySensorID++;
-        if (displaySensorID > maxSensors) displaySensorID = 1;
-      } while (!activeSensors[displaySensorID - 1]);
     }
   }
-  delay(3000);
+
+  // Handle 3-second interval for switching sensors
+  if (currentMillis - lastSensorSwitchTime >= sensorSwitchInterval) {
+    lastSensorSwitchTime = currentMillis;
+
+    // Move to the next sensor, skip inactive ones
+    do {
+      displaySensorID++;
+      if (displaySensorID > maxSensors) displaySensorID = 1;
+    } while (!activeSensors[displaySensorID - 1]);
+  }
 }
