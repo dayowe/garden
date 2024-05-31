@@ -1,33 +1,3 @@
-"""
-This script is designed for conducting polynomial regression analysis on any set of sensor data. It can be utilized for a broad range of applications, including but not limited to estimating Volumetric Water Content (VWC), Dielectric Permittivity (DP), or other variables of interest that can be modeled through a polynomial relationship. The user can specify the degree of the polynomial, which allows for the flexibility to fit data with varying levels of complexity and behavior.
-
-Upon execution, the script fits a polynomial model to the supplied data, computes the model coefficients, and visualizes both the data points and the polynomial fit. This analysis can be particularly useful for researchers, engineers, and data scientists who work with sensor data and require an empirical model to understand and predict the behavior of physical phenomena.
-
-Features:
-- Customizable polynomial degree for data fitting.
-- Easy data input through environment variables.
-- Data visualization to compare the original data points with the polynomial fit.
-
-Prerequisites for running the script:
-Make sure these packages are installed:
-- numpy: For the core polynomial fitting functionality.
-- matplotlib: For plotting the original data and the regression curve.
-- python-dotenv: For loading environmental variables from a .env file.
-
-These dependencies can be installed using the command:
-`pip install numpy matplotlib python-dotenv`
-
-Usage Instructions:
-1. Prepare a .env file with the predictor and response variables stored as comma-separated values, assigned to respective environment variable names.
-2. Run this script with appropriate command-line arguments specifying the degree of the polynomial and the names of the environment variables for the data.
-
-Example:
-To fit a second-degree polynomial, you might use the following command:
-`python polynomial_regression.py --degree 2 --predictor-var SENSOR_READINGS --response-var RESPONSE_VARIABLE`
-
-This will generate a quadratic model that fits the relationship between the sensor readings (predictor variable) and the response variable.
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
@@ -72,7 +42,7 @@ print("")
 # Print the coefficients with reasonable precision in descending order
 print("Fitted Polynomial Model Coefficients:")
 for i in range(degree, -1, -1):
-    print(f"a{i} = {coefficients[degree-i]:.8f}")
+    print(f"{coefficients[degree-i]:.8f}")
 
 # Use a finer grid for plotting the fitted curve
 predictor_vals_for_curve = np.linspace(min(predictor_vals), max(predictor_vals), 200)
@@ -83,6 +53,15 @@ predicted_VWC = polynomial_model(predictor_vals)
 
 # Calculate residuals
 residuals = response_vals - predicted_VWC
+
+# Calculate Mean Squared Error and Root Mean Squared Error
+MSE = np.mean(residuals**2)
+RMSE = np.sqrt(MSE)
+SEM = np.std(residuals) / np.sqrt(len(residuals))
+
+print(f"MSE: {MSE:.8f}")
+print(f"RMSE: {RMSE:.8f}")
+print(f"SEM: {SEM:.8f}")
 
 # Plot the original data and the fitted curve, and residuals
 plt.figure(figsize=(15, 7))
@@ -111,7 +90,7 @@ plt.scatter(predicted_VWC, residuals, color='purple')
 plt.axhline(y=0, color='r', linestyle='--')
 plt.xlabel('Predicted VWC')
 plt.ylabel('Residuals')
-plt.title('Residuals vs. Predicted VWC')
+plt.title(f'Residuals vs. Predicted VWC\nMSE: {MSE:.8f} | RMSE: {RMSE:.8f} | SEM: {SEM:.8f}')
 
 plt.tight_layout()
 plt.show()
