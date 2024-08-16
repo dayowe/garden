@@ -32,13 +32,13 @@ args = parser.parse_args()
 load_dotenv()
 
 # Fetch environment variables and convert them to numpy arrays
-humidity_vals = np.array(os.getenv('HUMIDITY_VALS').split(','), dtype=float)
-vwc_vals = np.array(os.getenv('VWC_VALS').split(','), dtype=float)
+raw = np.array(os.getenv('RAW').split(','), dtype=float)
+true_vwc = np.array(os.getenv('VWC').split(','), dtype=float)
 
-# Sort the data by humidity_vals, required for LSQUnivariateSpline
-sorted_indices = np.argsort(humidity_vals)
-humidity_vals_sorted = humidity_vals[sorted_indices]
-vwc_vals_sorted = vwc_vals[sorted_indices]
+# Sort the data by raw, required for LSQUnivariateSpline
+sorted_indices = np.argsort(raw)
+raw_sorted = raw[sorted_indices]
+true_vwc_sorted = true_vwc[sorted_indices]
 
 # Ensure there are enough points around each knot and knots are within interior
 def validate_knots(h_vals, knots):
@@ -52,27 +52,27 @@ def validate_knots(h_vals, knots):
 
 # Use the provided knot value(s) if given, otherwise default to [28]
 provided_knots = args.knot if args.knot is not None else [28]
-knots = validate_knots(humidity_vals_sorted, provided_knots)
+knots = validate_knots(raw_sorted, provided_knots)
 
 # Check if there are valid knots after validation
 if not knots:
     raise ValueError("No valid knots provided. Knots must be within the data range and not too close to the edges.")
 
 # Create the LSQ Univariate Spline for linear fit
-spline = LSQUnivariateSpline(humidity_vals_sorted, vwc_vals_sorted, t=knots, k=1)
+spline = LSQUnivariateSpline(raw_sorted, true_vwc_sorted, t=knots, k=1)
 
 # Get coefficients for each segment
 coefficients = []
 for i in range(len(knots) + 1):
     if i == 0:
-        x = humidity_vals_sorted[humidity_vals_sorted <= knots[0]]
-        y = vwc_vals_sorted[:len(x)]
+        x = raw_sorted[raw_sorted <= knots[0]]
+        y = true_vwc_sorted[:len(x)]
     elif i == len(knots):
-        x = humidity_vals_sorted[humidity_vals_sorted > knots[-1]]
-        y = vwc_vals_sorted[-len(x):]
+        x = raw_sorted[raw_sorted > knots[-1]]
+        y = true_vwc_sorted[-len(x):]
     else:
-        x = humidity_vals_sorted[(humidity_vals_sorted > knots[i-1]) & (humidity_vals_sorted <= knots[i])]
-        y = vwc_vals_sorted[(humidity_vals_sorted > knots[i-1]) & (humidity_vals_sorted <= knots[i])]
+        x = raw_sorted[(raw_sorted > knots[i-1]) & (raw_sorted <= knots[i])]
+        y = true_vwc_sorted[(raw_sorted > knots[i-1]) & (raw_sorted <= knots[i])]
     
     # Fit a new linear model for each segment to get coefficients
     A = np.vstack([x, np.ones(len(x))]).T

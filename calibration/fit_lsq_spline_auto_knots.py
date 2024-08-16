@@ -22,13 +22,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Fetch environment variables and convert them to numpy arrays
-humidity_vals = np.array(os.getenv('HUMIDITY_VALS').split(','), dtype=float)
-vwc_vals = np.array(os.getenv('VWC_VALS').split(','), dtype=float)
+raw = np.array(os.getenv('RAW').split(','), dtype=float)
+true_vwc = np.array(os.getenv('TRUE_VWC').split(','), dtype=float)
 
-# Sort the data by humidity_vals, required for LSQUnivariateSpline
-sorted_indices = np.argsort(humidity_vals)
-humidity_vals_sorted = humidity_vals[sorted_indices]
-vwc_vals_sorted = vwc_vals[sorted_indices]
+# Sort the data by raw, required for LSQUnivariateSpline
+sorted_indices = np.argsort(raw)
+raw_sorted = raw[sorted_indices]
+true_vwc_sorted = true_vwc[sorted_indices]
 
 # Function to estimate second derivative
 def estimate_curvature(x, y):
@@ -37,7 +37,7 @@ def estimate_curvature(x, y):
     return ddy
 
 # Estimate the curvature
-curvature = estimate_curvature(humidity_vals_sorted, vwc_vals_sorted)
+curvature = estimate_curvature(raw_sorted, true_vwc_sorted)
 
 # Determine threshold for curvature to place a knot
 curvature_threshold = np.std(curvature) * 2  # for example, two standard deviations above the mean
@@ -46,24 +46,24 @@ curvature_threshold = np.std(curvature) * 2  # for example, two standard deviati
 knot_indices = np.where(abs(curvature) > curvature_threshold)[0] + 1  # +1 for the offset from np.diff
 
 # Ensure knots are within the interior of the data domain
-knot_indices = knot_indices[(knot_indices > 0) & (knot_indices < len(humidity_vals_sorted) - 1)]
-knots = humidity_vals_sorted[knot_indices]
+knot_indices = knot_indices[(knot_indices > 0) & (knot_indices < len(raw_sorted) - 1)]
+knots = raw_sorted[knot_indices]
 
 # Create the LSQ Univariate Spline for linear fit
-spline = LSQUnivariateSpline(humidity_vals_sorted, vwc_vals_sorted, t=knots, k=1)
+spline = LSQUnivariateSpline(raw_sorted, true_vwc_sorted, t=knots, k=1)
 
 # Get coefficients for each segment
 coefficients = []
 for i in range(len(knots) + 1):
     if i == 0:
-        x = humidity_vals_sorted[humidity_vals_sorted <= knots[0]]
-        y = vwc_vals_sorted[:len(x)]
+        x = raw_sorted[raw_sorted <= knots[0]]
+        y = true_vwc_sorted[:len(x)]
     elif i == len(knots):
-        x = humidity_vals_sorted[humidity_vals_sorted >= knots[-1]]
-        y = vwc_vals_sorted[-len(x):]
+        x = raw_sorted[raw_sorted >= knots[-1]]
+        y = true_vwc_sorted[-len(x):]
     else:
-        x = humidity_vals_sorted[(humidity_vals_sorted > knots[i-1]) & (humidity_vals_sorted <= knots[i])]
-        y = vwc_vals_sorted[(humidity_vals_sorted > knots[i-1]) & (humidity_vals_sorted <= knots[i])]
+        x = raw_sorted[(raw_sorted > knots[i-1]) & (raw_sorted <= knots[i])]
+        y = true_vwc_sorted[(raw_sorted > knots[i-1]) & (raw_sorted <= knots[i])]
     
     # Fit a new linear model for each segment to get coefficients
     A = np.vstack([x, np.ones(len(x))]).T
