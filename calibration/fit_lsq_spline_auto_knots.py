@@ -17,13 +17,14 @@ import os
 import numpy as np
 from scipy.interpolate import LSQUnivariateSpline
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 
 # Load the environment variables from .env file
 load_dotenv()
 
 # Fetch environment variables and convert them to numpy arrays
 raw = np.array(os.getenv('RAW').split(','), dtype=float)
-true_vwc = np.array(os.getenv('TRUE_VWC').split(','), dtype=float)
+true_vwc = np.array(os.getenv('VWC').split(','), dtype=float)
 
 # Sort the data by raw, required for LSQUnivariateSpline
 sorted_indices = np.argsort(raw)
@@ -76,3 +77,55 @@ print("Knots:", ",".join(map(str, knots)))
 # Print the coefficients for each linear segment
 for i, (m, c) in enumerate(coefficients):
     print(f"Segment {i+1} Coefficients: Slope = {m}, Intercept = {c}")
+
+# Plotting code
+# Use a finer grid for plotting the fitted spline
+raw_for_curve = np.linspace(min(raw_sorted), max(raw_sorted), 200)
+fitted_values_for_curve = spline(raw_for_curve)
+
+# Predict the VWC values using the spline model
+predicted_vwc = spline(raw_sorted)
+
+# Calculate residuals
+residuals = true_vwc_sorted - predicted_vwc
+
+# Calculate Mean Squared Error and Root Mean Squared Error
+mse = np.mean(residuals**2)
+rmse = np.sqrt(mse)
+sem = np.std(residuals) / np.sqrt(len(residuals))
+
+print(f"MSE: {mse:.8f}")
+print(f"RMSE: {rmse:.8f}")
+print(f"SEM: {sem:.8f}")
+
+# Plot the original data and the fitted spline, and residuals
+plt.figure(figsize=(15, 7))
+
+# Original Data and Spline Fit Plot
+plt.subplot(1, 3, 1)
+plt.scatter(raw_sorted, true_vwc_sorted, color='blue', label='Actual VWC')
+plt.plot(raw_for_curve, fitted_values_for_curve, 'r-', label='Spline Fit')
+plt.xlabel('Sensor Readings')
+plt.ylabel('Volumetric Water Content (VWC)')
+plt.title('Sensor Readings vs. VWC')
+plt.legend()
+
+# Predicted VWC vs. Actual VWC
+plt.subplot(1, 3, 2)
+plt.scatter(true_vwc_sorted, predicted_vwc, color='green', label='Predicted VWC')
+plt.plot([true_vwc_sorted.min(), true_vwc_sorted.max()], [true_vwc_sorted.min(), true_vwc_sorted.max()], 'k--', lw=2, label='Perfect Prediction')
+plt.xlabel('Actual VWC')
+plt.ylabel('Predicted VWC')
+plt.title('Actual vs. Predicted VWC')
+plt.legend()
+
+# Residuals vs Predicted VWC
+plt.subplot(1, 3, 3)
+plt.scatter(predicted_vwc, residuals, color='purple')
+plt.axhline(y=0, color='r', linestyle='--')
+plt.xlabel('Predicted VWC')
+plt.ylabel('Residuals')
+plt.title(f'Residuals vs. Predicted VWC\nMSE: {mse:.8f} | RMSE: {rmse:.8f} | SEM: {sem:.8f}')
+
+plt.tight_layout()
+plt.show()

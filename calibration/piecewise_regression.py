@@ -25,16 +25,18 @@ import statsmodels.api as sm
 from statsmodels.tools.tools import add_constant
 from sklearn.metrics import mean_squared_error
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
+
 
 # Load the environment variables from .env file
 load_dotenv()
 
 # Fetch environment variables and convert them to numpy arrays
-humidity_vals = np.array(os.getenv('HUMIDITY_VALS').split(','), dtype=float)
-vwc_vals = np.array(os.getenv('VWC_VALS').split(','), dtype=float)
+humidity_vals = np.array(os.getenv('RAW').split(','), dtype=float)
+vwc_vals = np.array(os.getenv('VWC').split(','), dtype=float)
 
 # Function to find the best breakpoint using BIC
-def find_best_breakpoint(humidity, vwc, min_segment_size=10):
+def find_best_breakpoint(humidity, vwc, min_segment_size=5):
     best_breakpoint = None
     lowest_bic = float('inf')
 
@@ -80,11 +82,67 @@ model1 = sm.OLS(vwc_segment1, add_constant(segment1)).fit()
 model2 = sm.OLS(vwc_segment2, add_constant(segment2)).fit()
 
 # Print or save the coefficients
-print(f"Segment 1 Coefficients: Intercept = {model1.params[0]}, Slope = {model1.params[1]}")
-print(f"Segment 2 Coefficients: Intercept = {model2.params[0]}, Slope = {model2.params[1]}")
+print(f"Segment 1 Coefficients: Slope = {model1.params[1]}, Intercept = {model1.params[0]}")
+print(f"Segment 2 Coefficients: Slope = {model2.params[1]}, Intercept = {model2.params[0]}")
 
 # Optionally, save to a text file
 with open('coefficients.txt', 'w') as file:
     file.write(f"Optimal Breakpoint: {optimal_breakpoint}\n")
-    file.write(f"Segment 1 Coefficients: Intercept = {model1.params[0]}, Slope = {model1.params[1]}\n")
-    file.write(f"Segment 2 Coefficients: Intercept = {model2.params[0]}, Slope = {model2.params[1]}\n")
+    file.write(f"Segment 1 Coefficients: Slope = {model1.params[1]}, Intercept = {model1.params[0]}\n")
+    file.write(f"Segment 2 Coefficients: Slope = {model2.params[1]}, Intercept = {model2.params[0]}\n")
+
+# Use a finer grid for plotting the fitted segments
+predictor_vals_for_curve = np.linspace(min(humidity_vals), max(humidity_vals), 200)
+
+# Get the fitted values for each segment
+fitted_values_segment1 = model1.predict(add_constant(segment1))
+fitted_values_segment2 = model2.predict(add_constant(segment2))
+
+# Predict the VWC values using the piecewise linear model
+predicted_VWC = np.concatenate((fitted_values_segment1, fitted_values_segment2))
+
+# Calculate residuals
+residuals = vwc_vals - predicted_VWC
+
+# Calculate Mean Squared Error and Root Mean Squared Error
+MSE = mean_squared_error(vwc_vals, predicted_VWC)
+RMSE = np.sqrt(MSE)
+SEM = np.std(residuals) / np.sqrt(len(residuals))
+
+print(f"MSE: {MSE:.8f}")
+print(f"RMSE: {RMSE:.8f}")
+print(f"SEM: {SEM:.8f}")
+
+# Plot the original data and the fitted segments, and residuals
+plt.figure(figsize=(15, 7))
+
+# Original Data and Piecewise Fit Plot
+plt.subplot(1, 3, 1)
+plt.scatter(humidity_vals, vwc_vals, color='blue', label='Actual VWC')
+plt.plot(segment1, fitted_values_segment1, 'r-', label='Piecewise Fit Segment 1')
+plt.plot(segment2, fitted_values_segment2, 'g-', label='Piecewise Fit Segment 2')
+plt.axvline(x=optimal_breakpoint, color='k', linestyle='--', label=f'Breakpoint at {optimal_breakpoint}')
+plt.xlabel('Sensor Readings')
+plt.ylabel('Volumetric Water Content (VWC)')
+plt.title('Sensor Readings vs. VWC')
+plt.legend()
+
+# Predicted VWC vs. Actual VWC
+plt.subplot(1, 3, 2)
+plt.scatter(vwc_vals, predicted_VWC, color='green', label='Predicted VWC')
+plt.plot([vwc_vals.min(), vwc_vals.max()], [vwc_vals.min(), vwc_vals.max()], 'k--', lw=2, label='Perfect Prediction')
+plt.xlabel('Actual VWC')
+plt.ylabel('Predicted VWC')
+plt.title('Actual vs. Predicted VWC')
+plt.legend()
+
+# Residuals vs Predicted VWC
+plt.subplot(1, 3, 3)
+plt.scatter(predicted_VWC, residuals, color='purple')
+plt.axhline(y=0, color='r', linestyle='--')
+plt.xlabel('Predicted VWC')
+plt.ylabel('Residuals')
+plt.title(f'Residuals vs. Predicted VWC\nMSE: {MSE:.8f} | RMSE: {RMSE:.8f} | SEM: {SEM:.8f}')
+
+plt.tight_layout()
+plt.show()

@@ -26,8 +26,8 @@ from sklearn.model_selection import train_test_split
 load_dotenv()
 
 # Retrieve data from environment variables
-humidity_vals = np.array(os.getenv('HUMIDITY_VALS').split(', '), dtype=np.float64)
-vwc_vals = np.array(os.getenv('VWC_VALS').split(', '), dtype=np.float64)
+humidity_vals = np.array(os.getenv('RAW').split(', '), dtype=np.float64)
+vwc_vals = np.array(os.getenv('VWC').split(', '), dtype=np.float64)
 
 # Reshape data for model fitting
 X = humidity_vals.reshape(-1, 1)
